@@ -5,3 +5,7 @@ source-status-linker takes the output of a Source engine game's ~status~ command
 + sortedcontainers
 ** Credits
 + The included C source file was found on [[https://forums.alliedmods.net/showthread.php?t=60899][this post]] by voogru on the AlliedModders forum.
+** License
++ The Python script is GPLv2.
++ The C source code was freely posted on the aforementioned forum by its author and is assumed to be public domain.
++ The fonts are freely available from multiple sites on the Internet and are assumed to be freely distributable.  They are included here for convenience.

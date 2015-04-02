@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# * source-status-linker.py
+# ** Imports
+
+import datetime
 import cgi
 import re
 import string
@@ -7,11 +11,13 @@ import string
 from collections import defaultdict, namedtuple
 from sortedcontainers import SortedSet
 
+# ** Classes
 class User(object):
     def __init__(self, name=None, id=None):
         self.name = cgi.escape(name) if name else id
         self.id = convertSteamIDtoCommunityID(id)
 
+# ** Constants
 steamProfileURLprefix = 'https://steamcommunity.com/profiles/%s'
 
 REGEXP_NEW = re.compile(r'U:[0-9]:[0-9]+')
@@ -23,35 +29,81 @@ htmlStart = """Content-type: text/html; charset=utf-8
 <head>
     <title>source-status-linker</title>
     <style type="text/css">
+        @font-face {
+            font-family: 'TF2 Build';
+            font-style: normal;
+            font-weight: normal;
+            src: local('TF2 Build'), url('tf2build.woff') format('woff');
+        }
+        @font-face {
+            font-family: 'TF2 Secondary';
+            font-style: normal;
+            font-weight: normal;
+            src: local('TF2 Secondary'), url('tf2secondary.woff') format('woff');
+        }
         A {
-            color: #d16016;
+            color: #b65a1a;
             font-family: sans-serif;
             font-weight: bold;
         }
         BODY {
-            color: white;
-            font-family: sans-serif;
+            background: #3b3833;
+            color: #ede5ce;
+            font-family: TF2 Secondary, sans-serif;
+            font-size: 150%;
             font-weight: bold;
+            margin: 2em;
+        }
+        INPUT {
+            background: #a89a7f;
+            border: solid;
+            border-color: #a89a7f;
+            border-radius: 8px;
+            color: #ede5ce;
+            font-family: TF2 Build;
+            font-size: 100%;
+            margin: 0.25em;
+            padding: 0.25em;
+        }
+        TEXTAREA {
+            background: #7c7268;
+            color: #ede5ce;
+        }
+        .header {
+            font-size: 150%;
+            font-family: TF2 Build;
+            font-weight: bold;
+        }
+        .title {
+            font-family: TF2 Build;
+            font-size: 150%;
+        }
+        .username {
+            font-family: Verdana;
         }
     </style>
 </head>
 <body bgcolor="black" font="sans-serif">
 """
 
-tableStart = "<table><tr>"
-cellStart = "<td valign=\"top\" style=\"padding: 2em;\">"
+tableStart = "<table>"
+rowStart = "<tr>"
+rowEnd = "</tr>"
+cellStart = "<td valign=\"top\" style=\"padding: 1em;\">"
 cellEnd = "</td>"
-tableEnd = "</tr></table>"
+tableEnd = "</table>"
 
-formHTML = """<form action="https://google.com/search"><input type="text" name="q"><br><input type="submit" value="Google Search"></form><br><br>
-    <form method="post">
-        Paste status output:<input type="submit"><br>
+googleHTML = """<span class="title">Google</span><br><form action="https://google.com/search"><input type="text" name="q"><br><input type="submit" value="Google Search"></form>"""
+
+formHTML = """<form method="post">
+        <span class="title">Paste status output:</span><input type="submit" style="margin-left: 1em;"><br>
         <textarea name="data" rows="20" cols="80"></textarea>
     </form>"""
 
 htmlEnd = """</body>
 </html>"""
 
+# ** Functions
 def groupUsers(users):
     def makeSet():
         return SortedSet(key=lambda user: user.name.upper())
@@ -87,10 +139,19 @@ def convertSteamIDtoCommunityID(steamID):
 
     return communityID
 
+def formatHeader(name, data=''):
+    if data:
+        data = """ <span style="font-size: 150%%">%s</span>""" % data
+
+    return """<br><span class="header">%s:</span>%s""" % (name, data)
+
+def formatLetterHeader(letter):
+    return """<span class="header">%s</span><hr>""" % letter
+
 def formatUser(user):
     global steamProfileURLprefix
 
-    return "<a href=\"%s\">%s</a><br>" % (
+    return """<a href="%s" class="username">%s</a><br>""" % (
         steamProfileURLprefix % user.id,
         user.name)
 
@@ -104,10 +165,26 @@ if data:
     data = data.split("\n")
     users = []
 
+    hostname = None
+    address = None
+    mapName = None
+
     for line in data:
 
-        if line.startswith('#'):
-            ID = REGEXP_NEW.findall(line)
+        if line.startswith('hostname'):
+            # Get hostname
+            hostname = line.split(':')[1].strip()
+
+        elif line.startswith('udp'):
+            # Get IP address
+            address = line.split(':')[1].strip()
+
+        elif line.startswith('map'):
+            # Get map
+            mapName = line.split(':')[1].split()[0].strip()
+
+        elif line.startswith('#'):
+            ID = REGEXP_NEW.findall(line) or REGEXP_OLD.findall(line)
 
             if ID:
                 ID = ID[0]
@@ -136,6 +213,8 @@ if data:
     else:
         # **** Multiple users found
 
+        date = datetime.datetime.utcnow().strftime("%A, %d %B %Y %H:%M") + " UTC"
+
         alphabetGroups = [['A', 'B', 'C', 'D', 'E', 'F'],
                           ['G', 'H', 'I', 'J', 'K', 'L'],
                           ['M', 'N', 'O', 'P', 'Q', 'R'],
@@ -144,19 +223,44 @@ if data:
         userGroups = groupUsers(users)
 
         print htmlStart
+        print googleHTML
+
+        # Print header info
         print tableStart
+        print rowStart
         print cellStart
 
-        # Print non-letter names
-        if userGroups['_']:
-            print "<br>%s<br><hr>" % '_'
-            for user in userGroups['_']:
-                print formatUser(user)
+        print formatHeader('date', date)
 
-        # Print numbered names
-        print "<br>%s<br><hr>" % '0'
-        for user in userGroups['0']:
-            print formatUser(user)
+        if hostname:
+            print formatHeader('hostname', hostname)
+
+        if address:
+            print formatHeader('address', address)
+
+        if mapName:
+            print formatHeader('map', mapName)
+
+        print cellEnd
+        print rowEnd
+        print tableEnd
+
+        print tableStart
+        print rowStart
+
+        if userGroups['_'] or userGroups['0']:
+            groups = ['_', '0']
+
+            print cellStart
+
+            for g in groups:
+                if userGroups[g]:
+                    print formatLetterHeader(g)
+                    for user in userGroups[g]:
+                        print formatUser(user)
+                    print "<br><br>"
+
+            print cellEnd
 
         # Print alphabetical names
         for letterGroup in alphabetGroups:
@@ -164,17 +268,21 @@ if data:
 
             for letter in letterGroup:
                 if letter in userGroups:
-                    print "<br>%s<br><hr>" % letter
+                    print formatLetterHeader(letter)
                     for user in userGroups[letter]:
                         print formatUser(user)
+                    print "<br><br>"
 
             print cellEnd
 
+        print rowEnd
         print tableEnd
+
         print htmlEnd
 
 else:
     # *** No form submitted
     print htmlStart
+    print googleHTML
     print formHTML
     print htmlEnd
