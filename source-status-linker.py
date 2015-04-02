@@ -21,7 +21,7 @@ htmlStart = """Content-type: text/html; charset=utf-8
 
 <html>
 <head>
-    <title>Title</title>
+    <title>source-status-linker</title>
     <style type="text/css">
         A {
             color: #d16016;

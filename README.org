@@ -1,0 +1,7 @@
+* source-status-linker
+** Description
+source-status-linker takes the output of a Source engine game's ~status~ command and displays an HTML page containing links to the players' Steam community profiles.  It is intended to be run as a CGI script on a Web server.
+** Dependencies
++ sortedcontainers
+** Credits
++ The included C source file was found on [[https://forums.alliedmods.net/showthread.php?t=60899][this post]] by voogru on the AlliedModders forum.
