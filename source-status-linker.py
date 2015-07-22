@@ -95,6 +95,8 @@ tableEnd = "</table>"
 
 googleHTML = """<span class="title">Google</span><br><form action="https://google.com/search"><input type="text" name="q"><br><input type="submit" value="Google Search"></form>"""
 
+warshipsHTML = """<span class="title">World of Warships players</span><br><form action="http://worldofwarships.com/community/accounts/search/"><input type="text" name="search"><br><input type="submit" value="Search"></form>"""
+
 formHTML = """<form method="post">
         <span class="title">Paste status output:</span><input type="submit" style="margin-left: 1em;"><br>
         <textarea name="data" rows="20" cols="80"></textarea>
@@ -224,6 +226,7 @@ if data:
 
         print htmlStart
         print googleHTML
+        print warshipsHTML
 
         # Print header info
         print tableStart
@@ -284,5 +287,6 @@ else:
     # *** No form submitted
     print htmlStart
     print googleHTML
+    print warshipsHTML
     print formHTML
     print htmlEnd
